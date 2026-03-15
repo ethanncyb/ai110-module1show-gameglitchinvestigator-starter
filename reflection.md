@@ -61,14 +61,23 @@ Answer each question in 3 to 5 sentences. Be specific and honest about what actu
 ## 4. What did you learn about Streamlit and state?
 
 - In your own words, explain why the secret number kept changing in the original app.
+  - Every time I clicked "Submit Guess," Streamlit re-ran the whole `app.py` script from scratch. The original code had `secret = random.randint(low, high)` sitting at the top level with no guard, so it just ran again and picked a brand new number on every single click. I was basically playing against a moving target the whole time without realising it, since the secret got swapped out before my guess was even checked against it.
+
 - How would you explain Streamlit "reruns" and session state to a friend who has never used Streamlit?
+  - Think of your script like a recipe that gets cooked fresh every time you press a button. Streamlit wipes the counter and starts over from line one after every click. `st.session_state` is basically a sticky note you leave on the fridge that survives between each cook. Without it, every variable just resets to zero on every click, which is why the secret kept changing and the attempt counter was acting weird.
+
 - What change did you make that finally gave the game a stable secret number?
+  - I wrapped the secret generation in `if "secret" not in st.session_state`, so the random number only gets picked once on the very first load. After that the condition is always `False` and the existing secret is left alone. The only times it gets replaced on purpose are when the player clicks "New Game," switches difficulty, or closes the browser tab entirely.
 
 ---
 
 ## 5. Looking ahead: your developer habits
 
 - What is one habit or strategy from this project that you want to reuse in future labs or projects?
-  - This could be a testing habit, a prompting strategy, or a way you used Git.
+  - Writing a test before calling a bug fixed. A few times I read the code, thought the fix looked right, and then the pytest case caught something I had missed. For example, `test_string_secret_raises_type_error` showed me that the original `TypeError` fallback in `check_guess` was actually hiding the string-casting bug instead of stopping it. I want to keep asking myself "what test would have caught this?" before I close any issue from now on.
+
 - What is one thing you would do differently next time you work with AI on a coding task?
+  - I would slow down and ask the AI to explain why a fix works before I accept it. With Bug 1, Copilot jumped straight to changing the comparison conditions when the real problem was just the messages being swapped. If I had asked it to walk me through the reasoning first, I probably would have caught that it was solving the wrong thing. Testing on a small isolated example before touching the real code would also save a lot of back-and-forth.
+
 - In one or two sentences, describe how this project changed the way you think about AI generated code.
+  - I used to think AI code was either right or wrong and I just had to figure out which. Now I think of it more like getting a rough draft from a teammate who works really fast but skips the testing part, so it is still on me to read it carefully, try to break it, and actually understand what it is doing before shipping it.
