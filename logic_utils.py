@@ -41,6 +41,9 @@ def check_guess(guess, secret):
     if guess == secret:
         return "Win", "🎉 Correct!"
 
+    # FIX Bug 1: Copilot flagged the hint logic as suspicious; closer inspection
+    # (with ChatGPT) confirmed the messages were swapped — "Go HIGHER" was shown
+    # when the guess was too high, and vice versa. Corrected the message strings.
     if guess > secret:
         return "Too High", "📉 Go LOWER!"
     else:

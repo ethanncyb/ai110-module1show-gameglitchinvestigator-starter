@@ -31,17 +31,30 @@ Answer each question in 3 to 5 sentences. Be specific and honest about what actu
 ## 2. How did you use AI as a teammate?
 
 - Which AI tools did you use on this project (for example: ChatGPT, Gemini, Copilot)?
-- Give one example of an AI suggestion that was correct (including what the AI suggested and how you verified the result).
-- Give one example of an AI suggestion that was incorrect or misleading (including what the AI suggested and how you verified the result).
+  - Copilot, ChatGPT and Claude Code
 
+- Give one example of an AI suggestion that was correct (including what the AI suggested and how you verified the result).
+  - Copilot found the attempts counter was initialized at 1 instead of 0 in app.py (line 96). This caused the first guess to count as two attempts, resulting in an off-by-one error where I could only make 7 guesses instead of the expected 8. After changing the initialization to 0 and testing the game, I confirmed that the attempts counter now matched the allowed number.
+
+- Give one example of an AI suggestion that was incorrect or misleading (including what the AI suggested and how you verified the result).
+  - Copilot suggested that the comparison logic in the `check_guess` function was incorrect. Below screenshot shows Copilot fix it in the wrong way.
+  ![image_4](images/img04.jpg)
+  
+  - After reviewing the code, I found that the logic was correct, but the hint messages for "Too High" and "Too Low" were reversed. Swapping the messages fixed the issue, which I verified by testing the game in the browser. The screenshot below shows the fixed code after I updated my prompt to ask Copilot to fix only the messages, not the logic.
+  ![image_5](images/img05.jpg)
 ---
 
 ## 3. Debugging and testing your fixes
 
 - How did you decide whether a bug was really fixed?
-- Describe at least one test you ran (manual or using pytest)  
-  and what it showed you about your code.
+  - A bug was considered fixed only when a targeted pytest case passed, the behavior made sense when I manually traced through the logic, and I confirmed the fix by testing it in the browser. For example, fixing Bug 3 (string casting) wasn't enough to just remove the offending lines — I also wrote a test that confirmed `check_guess(9, 10)` returns `"Too Low"` (numeric comparison), and a second test showing that passing a string secret `"10"` now raises a `TypeError`, which proves the fix removed the problematic path entirely.
+
+- Describe at least one test you ran (manual or using pytest) and what it showed you about your code.
+  - I wrote 15 pytest cases in `test/test_game_logic.py`, organized into four classes, one per bug. The most revealing was `TestBug3SecretStringCasting`: it exposed that string comparison of `"9" > "10"` is `True`, which means the original even-attempt string cast would silently return the wrong direction hint without any error. Without this test I might not have understood *why* the bug caused intermittent wrong hints rather than a consistent failure. Running `python -m pytest test/test_game_logic.py -v` with the `.venv` activated gave 15/15 passed, confirming all four bugs were resolved.
+  ![image_6](images/img06.jpg)
+
 - Did AI help you design or understand any tests? How?
+  - Yes. Claude Code proposed the test structure after reviewing the bug descriptions in `reflection.md` and the fixed code in `logic_utils.py`. It suggested using class-based grouping (one class per bug) so each test's intent is immediately clear from its class name. Claude Code also pointed out that Bug 2 (off-by-one in attempts) couldn't be unit-tested through Streamlit session state directly, so instead it tested `update_score` with `attempt_number=1` vs `attempt_number=2` to show the score difference the bug would have caused. When the first run of the test suite had one failure (the string-secret demonstration test raised `TypeError` instead of returning a wrong value), Claude Code explained why the `TypeError` fallback had been removed as part of the fix, and updated the test to use `pytest.raises(TypeError)` to correctly capture that behavior.
 
 ---
 

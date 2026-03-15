@@ -1,6 +1,9 @@
 import random
 import streamlit as st
 
+# REFACTOR: Copilot (Agent mode) identified that all game logic was mixed into app.py;
+# Claude Code extracted get_range_for_difficulty, parse_guess, check_guess, and
+# update_score into logic_utils.py to separate UI from business logic.
 from logic_utils import get_range_for_difficulty, parse_guess, check_guess, update_score
 
 st.set_page_config(page_title="Glitchy Guesser", page_icon="🎮")
@@ -31,6 +34,8 @@ st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
 if "secret" not in st.session_state:
     st.session_state.secret = random.randint(low, high)
 
+# FIX Bug 2: Copilot spotted that attempts was initialized to 1 instead of 0,
+# causing an off-by-one error where players got one fewer guess than allowed.
 if "attempts" not in st.session_state:
     st.session_state.attempts = 0
 
@@ -72,7 +77,11 @@ with col3:
 
 if new_game:
     st.session_state.attempts = 0
+    # FIX Bug 4: Claude Code identified that the original reset used hardcoded
+    # randint(1, 100), ignoring the selected difficulty range.
     st.session_state.secret = random.randint(low, high)
+    # FIX Bug 5: Claude Code found that score, status, and history were never
+    # cleared on new game, leaving the app stuck in a won/lost state.
     st.session_state.score = 0
     st.session_state.status = "playing"
     st.session_state.history = []
@@ -97,6 +106,9 @@ if submit:
     else:
         st.session_state.history.append(guess_int)
 
+        # FIX Bug 3: Claude Code removed the parity check that cast the secret to
+        # a string on even attempts, which broke numeric comparison (e.g. "9" > "10"
+        # lexicographically but 9 < 10 numerically).
         secret = st.session_state.secret
 
         outcome, message = check_guess(guess_int, secret)
