@@ -6,7 +6,14 @@ import pytest
 # Add parent directory to path so we can import logic_utils
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from logic_utils import check_guess, parse_guess, get_range_for_difficulty, update_score
+from logic_utils import (
+    check_guess,
+    format_history_entry,
+    get_range_for_difficulty,
+    parse_guess,
+    update_score,
+    validate_guess_range,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -193,3 +200,61 @@ class TestUpdateScoreEdgeCases:
         # Unrecognised outcome strings must be a no-op
         score = update_score(50, "Draw", 3)
         assert score == 50
+
+
+# ---------------------------------------------------------------------------
+# Feature: Guess History sidebar + High Score tracker
+# format_history_entry lives in logic_utils.py so it can be tested independently
+# ---------------------------------------------------------------------------
+
+class TestFormatHistoryEntry:
+    def test_too_high_uses_red_icon(self):
+        entry = format_history_entry(42, "Too High")
+        assert "🔴" in entry
+        assert "42" in entry
+        assert "Too High" in entry
+
+    def test_too_low_uses_blue_icon(self):
+        entry = format_history_entry(10, "Too Low")
+        assert "🔵" in entry
+        assert "10" in entry
+        assert "Too Low" in entry
+
+    def test_win_uses_green_icon(self):
+        entry = format_history_entry(25, "Win")
+        assert "🟢" in entry
+        assert "25" in entry
+
+    def test_unknown_outcome_uses_neutral_icon(self):
+        entry = format_history_entry(7, "Draw")
+        assert "⚪" in entry
+        assert "7" in entry
+
+
+class TestValidateGuessRange:
+    def test_valid_guess_within_range(self):
+        ok, err = validate_guess_range(10, 1, 20)
+        assert ok is True
+        assert err is None
+
+    def test_guess_at_lower_boundary(self):
+        ok, err = validate_guess_range(1, 1, 20)
+        assert ok is True
+
+    def test_guess_at_upper_boundary(self):
+        ok, err = validate_guess_range(20, 1, 20)
+        assert ok is True
+
+    def test_guess_below_range(self):
+        ok, err = validate_guess_range(0, 1, 20)
+        assert ok is False
+        assert "1" in err and "20" in err
+
+    def test_guess_above_range(self):
+        ok, err = validate_guess_range(21, 1, 20)
+        assert ok is False
+        assert "1" in err and "20" in err
+
+    def test_error_message_mentions_both_bounds(self):
+        _, err = validate_guess_range(99, 1, 50)
+        assert "1" in err and "50" in err

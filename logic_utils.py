@@ -67,3 +67,27 @@ def update_score(current_score: int, outcome: str, attempt_number: int):
         return current_score - 5
 
     return current_score
+
+
+def validate_guess_range(guess: int, low: int, high: int):
+    """Return (ok, error_message). ok is False when guess is outside [low, high]."""
+    if guess < low or guess > high:
+        return False, f"Please enter a number between {low} and {high}."
+    return True, None
+
+
+# FEATURE: Claude Code (Agent mode) added format_history_entry to logic_utils.py
+# as part of a multi-file feature expansion — keeping display-formatting logic
+# out of app.py and testable in isolation.
+def format_history_entry(guess: int, outcome: str) -> str:
+    """Return a formatted string for one guess history row.
+
+    Examples:
+        format_history_entry(42, "Too High") -> "🔴 42 — Too High"
+        format_history_entry(10, "Too Low")  -> "🔵 10 — Too Low"
+        format_history_entry(25, "Win")      -> "🟢 25 — Win!"
+    """
+    icons = {"Win": "🟢", "Too High": "🔴", "Too Low": "🔵"}
+    icon = icons.get(outcome, "⚪")
+    label = "Win!" if outcome == "Win" else outcome
+    return f"{icon} {guess} — {label}"
