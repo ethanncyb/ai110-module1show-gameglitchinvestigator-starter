@@ -1,4 +1,5 @@
 import random
+
 import streamlit as st
 
 # REFACTOR: Copilot (Agent mode) identified that all game logic was mixed into app.py;

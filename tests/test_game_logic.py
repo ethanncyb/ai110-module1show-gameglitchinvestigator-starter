@@ -1,6 +1,7 @@
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 # Add parent directory to path so we can import logic_utils
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -102,3 +103,93 @@ class TestBug4DifficultyRange:
     def test_hard_high_is_not_100(self):
         _, high = get_range_for_difficulty("Hard")
         assert high != 100
+
+
+# ---------------------------------------------------------------------------
+# Advanced Edge-Case Testing
+# Generated with targeted Claude Code prompting:
+#   "Write pytest edge cases for parse_guess covering non-numeric strings,
+#    negative numbers, empty/None input, floats, and whitespace."
+# ---------------------------------------------------------------------------
+
+class TestParseGuessEdgeCases:
+    def test_non_numeric_string_returns_error(self):
+        # A word like "abc" must be rejected, not crash
+        ok, value, err = parse_guess("abc")
+        assert ok is False
+        assert value is None
+        assert err == "That is not a number."
+
+    def test_special_characters_return_error(self):
+        # Symbols should never be treated as a valid guess
+        ok, value, err = parse_guess("!@#")
+        assert ok is False
+        assert err == "That is not a number."
+
+    def test_empty_string_returns_error(self):
+        # Submitting nothing should prompt the player to enter a guess
+        ok, value, err = parse_guess("")
+        assert ok is False
+        assert err == "Enter a guess."
+
+    def test_none_input_returns_error(self):
+        # None (Streamlit default before any input) must be handled gracefully
+        ok, value, err = parse_guess(None)
+        assert ok is False
+        assert err == "Enter a guess."
+
+    def test_negative_number_is_parsed(self):
+        # parse_guess should accept negative integers — range validation is the
+        # caller's responsibility, not the parser's
+        ok, value, err = parse_guess("-5")
+        assert ok is True
+        assert value == -5
+        assert err is None
+
+    def test_float_string_is_truncated_to_int(self):
+        # "3.7" should parse to 3, not raise an error
+        ok, value, err = parse_guess("3.7")
+        assert ok is True
+        assert value == 3
+        assert err is None
+
+    def test_whitespace_only_returns_error(self):
+        # A guess of only spaces is not a valid number
+        ok, value, err = parse_guess("   ")
+        assert ok is False
+        assert err == "That is not a number."
+
+    def test_very_large_number_is_parsed(self):
+        # No upper bound is enforced in the parser — large ints are valid input
+        ok, value, err = parse_guess("999999")
+        assert ok is True
+        assert value == 999999
+
+
+class TestCheckGuessEdgeCases:
+    def test_guess_of_one_against_one(self):
+        # Boundary: lowest possible value guessed correctly
+        outcome, _ = check_guess(1, 1)
+        assert outcome == "Win"
+
+    def test_guess_just_above_secret(self):
+        # Off-by-one above secret must be Too High, not Win
+        outcome, _ = check_guess(51, 50)
+        assert outcome == "Too High"
+
+    def test_guess_just_below_secret(self):
+        # Off-by-one below secret must be Too Low, not Win
+        outcome, _ = check_guess(49, 50)
+        assert outcome == "Too Low"
+
+
+class TestUpdateScoreEdgeCases:
+    def test_win_score_never_drops_below_10(self):
+        # At attempt 10+, points formula goes negative — floor should clamp to 10
+        score = update_score(0, "Win", 10)
+        assert score >= 10
+
+    def test_unknown_outcome_does_not_change_score(self):
+        # Unrecognised outcome strings must be a no-op
+        score = update_score(50, "Draw", 3)
+        assert score == 50
